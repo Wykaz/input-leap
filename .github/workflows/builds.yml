@@ -495,7 +495,18 @@ jobs:
       - name: Build the Installer
         if: env.B_BUILD_TYPE == 'Release'
         run: |
-          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" /Qp .\build\installer-inno\input-leap.iss
+          # Chemin vers le fichier généré par CMake
+          $issPath = ".\build\installer-inno\input-leap.iss"
+          
+          # Lecture du fichier et remplacement par regex pour corriger la version
+          # On change "VersionInfoProductVersion=3.0.3-release" en "VersionInfoProductVersion=3.0.3"
+          (Get-Content $issPath) -replace 'VersionInfoProductVersion=(\d+\.\d+\.\d+).*', 'VersionInfoProductVersion=$1' | Set-Content $issPath
+
+          # Vérification (optionnel, pour voir le résultat dans les logs)
+          Select-String -Path $issPath -Pattern "VersionInfoProductVersion"
+
+          # Compilation de l'installateur
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" /Qp $issPath
 
       - uses: actions/upload-artifact@v4
         if: env.B_BUILD_TYPE == 'Release'
